@@ -25,8 +25,10 @@ public:
     ~MainWindow();
 
     double contangente(double angle);
+    float AireBarycentrique(MyMesh* _mesh, int vertexID);
+
     float faceArea(MyMesh* _mesh, int faceID);
-    QVector3D LaplaceBeltrami(int faceID);
+    QVector3D LaplaceBeltrami(MyMesh* _mesh, int vertexID);
 
 
 private slots:
