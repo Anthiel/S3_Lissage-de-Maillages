@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include <QVector3D>
 
 namespace Ui {
 class MainWindow;
@@ -22,6 +23,11 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    double contangente(double angle);
+    float faceArea(MyMesh* _mesh, int faceID);
+    QVector3D LaplaceBeltrami(int faceID);
+
 
 private slots:
     void on_pushButton_clicked();

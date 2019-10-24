@@ -79,3 +79,89 @@ void MainWindow::on_pushButton_2_clicked()
 
     ui->widget->loadMesh((GLfloat*)mesh.points(), cols, mesh.n_vertices() * 3, IndiceArray, mesh.n_faces() * 3);
 }
+
+float MainWindow::AireBarycentrique(MyMesh* _mesh, int vertexID){
+    float aireTotal;
+     VertexHandle v_it = _mesh->vertex_handle(vertexID);
+
+     // parcours des faces autour de vertexID
+    for(MyMesh::VertexFaceIter  vf_it = mesh.vf_iter(v_it); vf_it; ++vf_it) {
+        FaceHandle fh = *vf_it;
+        aireTotal += faceArea(_mesh, fh.idx());
+    }
+    return 1/3.0*aireTotal;
+}
+
+
+float MainWindow::faceArea(MyMesh* _mesh, int faceID)
+{
+    FaceHandle fh = _mesh->face_handle(faceID);
+    std::vector <int> pointID;
+    VectorT <float,3> points[3];
+
+    for (MyMesh::FaceVertexIter curVert = _mesh->fv_iter(fh); curVert.is_valid(); curVert ++)
+    {
+        pointID.push_back((*curVert).idx());
+    }
+
+    for (int i=0; i<pointID.size();i++)
+    {
+        VertexHandle vh = _mesh->vertex_handle(pointID.at(i));
+        points[i][0] = _mesh->point(vh)[0];
+        points[i][1] = _mesh->point(vh)[1];
+        points[i][2] = _mesh->point(vh)[2];
+    }
+    VectorT<float,3> BmoinsA = points[1] - points[0];
+    VectorT<float,3> CmoinsA = points[2] - points[0];
+
+    VectorT<float,3> res;
+    res[0] = BmoinsA[1] * CmoinsA[2] - BmoinsA[2] * CmoinsA[1];
+    res[1] = BmoinsA[2] * CmoinsA[0] - BmoinsA[0] * CmoinsA[2];
+    res[2] = BmoinsA[0] * CmoinsA[1] - BmoinsA[1] * CmoinsA[0];
+
+    return res.norm()/2.0;
+}
+
+QVector3D MainWindow::LaplaceBeltrami(MyMesh* _mesh, int vertexID){
+
+    QVector3D point(0, 0, 0);
+    VertexHandle v_it = _mesh->vertex_handle(vertexID);
+    std::vector<QVector3D> AngleID;
+
+    for(int i = 0; i<3 ; i++){ //pour x, y, z
+
+        double res = 1/(2*AireBarycentrique(_mesh, vertexID));
+        double sum = 0;
+
+        //parcours des vertexs autour du vertex
+        for(MyMesh::VertexVertexIter  vv_it = _mesh.vv_iter(v_it); vv_it; ++vv_it) {
+               VertexHandle vh = *vv_it;
+
+               //on cherche les deux faces des deux vertexs
+               for (MyMesh::VertexFaceIter curVert = _mesh->vf_iter(v_it); curVert.is_valid(); curVert ++)
+               {
+                   for (MyMesh::VertexFaceIter curVert1 = _mesh->vf_iter(vh); curVert1.is_valid(); curVert1 ++)
+                   {
+                       if((*curVert).idx() == (*curVert1).idx()){
+                           //cette face a les deux vertexs
+                           for(MyMesh::FaceVertexIter fh = _mesh->fv_iter(curVert); fh.is_valid(); fh ++){
+                               //on parcours les vertexs de cette face pour trouver le vertex manquant
+                               VertexHandle vh1 = *fh;
+                               if(vh1.idx() != vh.idx() && vh1.idx() != v_it.idx()){
+                                   AngleID.push_back(QVector3D(vh.idx(), vh1.idx() , v_it.idx()));
+                               }
+                           }
+
+                       }
+                   }
+               }
+           }
+        res *= sum;
+
+    }
+
+}
+
+double MainWindow::contangente(double angle){
+    return 1/tan(angle);
+}
