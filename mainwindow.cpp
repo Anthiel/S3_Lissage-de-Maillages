@@ -76,7 +76,7 @@ void MainWindow::on_pushButton_2_clicked()
     {
         cols[c] = 0.5; cols[c+1] = 0.5; cols[c+2] = 0.5;
     }
-
+    meshLoaded = mesh;
     ui->widget->loadMesh((GLfloat*)mesh.points(), cols, mesh.n_vertices() * 3, IndiceArray, mesh.n_faces() * 3);
 }
 
@@ -85,7 +85,7 @@ float MainWindow::AireBarycentrique(MyMesh* _mesh, int vertexID){
      VertexHandle v_it = _mesh->vertex_handle(vertexID);
 
      // parcours des faces autour de vertexID
-    for(MyMesh::VertexFaceIter  vf_it = mesh.vf_iter(v_it); vf_it; ++vf_it) {
+    for(MyMesh::VertexFaceIter  vf_it = _mesh->vf_iter(v_it); vf_it; ++vf_it) {
         FaceHandle fh = *vf_it;
         aireTotal += faceArea(_mesh, fh.idx());
     }
@@ -124,7 +124,6 @@ float MainWindow::faceArea(MyMesh* _mesh, int faceID)
 
 QVector3D MainWindow::LaplaceBeltrami(MyMesh* _mesh, int vertexID){
 
-    QVector3D point(0, 0, 0);
     VertexHandle v_it = _mesh->vertex_handle(vertexID);
     std::vector<QVector3D> AngleID;
 
@@ -185,4 +184,14 @@ QVector3D MainWindow::LaplaceBeltrami(MyMesh* _mesh, int vertexID){
 
 double MainWindow::contangente(double angle){
     return 1/tan(angle);
+}
+
+void MainWindow::on_vertexSelec_valueChanged(const QString &arg1)
+{
+    VertexLaplace = arg1.toInt();
+}
+
+void MainWindow::on_laplace_clicked()
+{
+    LaplaceBeltrami(&meshLoaded, VertexLaplace);
 }

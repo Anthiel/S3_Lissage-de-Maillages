@@ -29,12 +29,18 @@ public:
 
     float faceArea(MyMesh* _mesh, int faceID);
     QVector3D LaplaceBeltrami(MyMesh* _mesh, int vertexID);
+    MyMesh meshLoaded;
+    int VertexLaplace = 0;
 
 
 private slots:
     void on_pushButton_clicked();
 
     void on_pushButton_2_clicked();
+
+    void on_vertexSelec_valueChanged(const QString &arg1);
+
+    void on_laplace_clicked();
 
 private:
     Ui::MainWindow *ui;
