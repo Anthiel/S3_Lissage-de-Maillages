@@ -128,38 +128,59 @@ QVector3D MainWindow::LaplaceBeltrami(MyMesh* _mesh, int vertexID){
     VertexHandle v_it = _mesh->vertex_handle(vertexID);
     std::vector<QVector3D> AngleID;
 
-    for(int i = 0; i<3 ; i++){ //pour x, y, z
+    MyMesh::Point sum;
 
-        double res = 1/(2*AireBarycentrique(_mesh, vertexID));
-        double sum = 0;
+    //parcours des vertexs autour du vertex
+    for(MyMesh::VertexVertexIter  vv_it = _mesh->vv_iter(v_it); vv_it; ++vv_it) {
+        VertexHandle vh = *vv_it;
+        AngleID.clear();
 
-        //parcours des vertexs autour du vertex
-        for(MyMesh::VertexVertexIter  vv_it = _mesh.vv_iter(v_it); vv_it; ++vv_it) {
-               VertexHandle vh = *vv_it;
-
-               //on cherche les deux faces des deux vertexs
-               for (MyMesh::VertexFaceIter curVert = _mesh->vf_iter(v_it); curVert.is_valid(); curVert ++)
-               {
-                   for (MyMesh::VertexFaceIter curVert1 = _mesh->vf_iter(vh); curVert1.is_valid(); curVert1 ++)
-                   {
-                       if((*curVert).idx() == (*curVert1).idx()){
-                           //cette face a les deux vertexs
-                           for(MyMesh::FaceVertexIter fh = _mesh->fv_iter(curVert); fh.is_valid(); fh ++){
-                               //on parcours les vertexs de cette face pour trouver le vertex manquant
-                               VertexHandle vh1 = *fh;
-                               if(vh1.idx() != vh.idx() && vh1.idx() != v_it.idx()){
-                                   AngleID.push_back(QVector3D(vh.idx(), vh1.idx() , v_it.idx()));
-                               }
-                           }
-
-                       }
+        //on cherche les deux faces des deux vertexs
+        for (MyMesh::VertexFaceIter curVert = _mesh->vf_iter(v_it); curVert.is_valid(); curVert ++)
+        {
+           for (MyMesh::VertexFaceIter curVert1 = _mesh->vf_iter(vh); curVert1.is_valid(); curVert1 ++)
+           {
+               if((*curVert).idx() == (*curVert1).idx()){
+               //cette face a les deux vertexs
+               for(MyMesh::FaceVertexIter fh = _mesh->fv_iter(curVert); fh.is_valid(); fh ++){
+                   //on parcours les vertexs de cette face pour trouver le vertex manquant
+                   VertexHandle vh1 = *fh;
+                   if(vh1.idx() != vh.idx() && vh1.idx() != v_it.idx()){
+                       AngleID.push_back(QVector3D(vh.idx(), vh1.idx() , v_it.idx()));
                    }
                }
-           }
-        res *= sum;
+            }
+         }
+     }
+     //arcos(produit scalaire entre deux vecteurs) = angle entre deux vecteurs
 
+     //premier angle
+     MyMesh::Point pointV = _mesh->point(_mesh->vertex_handle(vertexID));
+     MyMesh::Point pointVi = _mesh->point(_mesh->vertex_handle(vh.idx()));
+
+     MyMesh::Point pointCentral = _mesh->point(_mesh->vertex_handle(AngleID.at(0).y()));
+     MyMesh::Point pointA = _mesh->point(_mesh->vertex_handle(AngleID.at(0).x()));
+     MyMesh::Point pointB = _mesh->point(_mesh->vertex_handle(AngleID.at(0).z()));
+
+     MyMesh::Point vecteurCentralA = pointCentral - pointA;
+     MyMesh::Point vecteurCentralB = pointCentral - pointB;
+
+     double angleAlphaI = acos(vecteurCentralA | vecteurCentralB);
+
+     pointCentral = _mesh->point(_mesh->vertex_handle(AngleID.at(1).y()));
+     pointA = _mesh->point(_mesh->vertex_handle(AngleID.at(1).x()));
+     pointB = _mesh->point(_mesh->vertex_handle(AngleID.at(1).z()));
+
+     vecteurCentralA = pointCentral - pointA;
+     vecteurCentralB = pointCentral - pointB;
+
+     double angleBetaI = acos(vecteurCentralA | vecteurCentralB);
+
+     sum += ( contangente(angleAlphaI) + contangente(angleBetaI) ) * (pointVi - pointV);
     }
 
+    MyMesh::Point res = 1/(2*AireBarycentrique(_mesh, vertexID)) * sum;
+    _mesh->set_point(v_it, res);
 }
 
 double MainWindow::contangente(double angle){
