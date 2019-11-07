@@ -110,8 +110,10 @@ double MainWindow::contangente(double angle){
 }
 
 void MainWindow::colorVertex(MyMesh *_mesh, int vertexID, MyMesh::Color c){
+    resetAllColorsAndThickness(_mesh);
+
     _mesh->set_color(_mesh->vertex_handle(vertexID),MyMesh::Color(255,0,0));
-    _mesh->data(_mesh->vertex_handle(vertexID)).thickness = 2;
+    _mesh->data(_mesh->vertex_handle(vertexID)).thickness = 20;
     displayMesh(&mesh);
 }
 
@@ -124,6 +126,7 @@ void MainWindow::on_vertexSelec_valueChanged(const QString &arg1)
 void MainWindow::on_laplace_clicked()
 {
     LaplaceBeltrami(&mesh, VertexLaplace);
+    displayMesh(&mesh);
 }
 
 
