@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>632</width>
+    <height>408</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,22 +19,49 @@
      <widget class="QWidget" name="widget_2" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-        <horstretch>0</horstretch>
+        <horstretch>150</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="minimumSize">
+       <size>
+        <width>150</width>
+        <height>0</height>
+       </size>
+      </property>
       <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="spacing">
+        <number>4</number>
+       </property>
+       <property name="leftMargin">
+        <number>3</number>
+       </property>
+       <property name="topMargin">
+        <number>3</number>
+       </property>
+       <property name="rightMargin">
+        <number>3</number>
+       </property>
+       <property name="bottomMargin">
+        <number>3</number>
+       </property>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="pushButton_chargement">
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="text">
-          <string>Générer Cube</string>
+          <string>Charger OBJ</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="pushButton_generer">
          <property name="text">
-          <string>Charger .obj</string>
+          <string>Générer mesh</string>
          </property>
         </widget>
        </item>
@@ -57,7 +84,7 @@
        <item>
         <widget class="QPushButton" name="laplace">
          <property name="text">
-          <string>Laplace</string>
+          <string>laplace</string>
          </property>
         </widget>
        </item>
@@ -65,7 +92,7 @@
      </widget>
     </item>
     <item>
-     <widget class="MeshViewerWidget" name="widget" native="true"/>
+     <widget class="MeshViewerWidget" name="displayWidget" native="true"/>
     </item>
    </layout>
   </widget>
@@ -74,7 +101,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>632</width>
      <height>26</height>
     </rect>
    </property>

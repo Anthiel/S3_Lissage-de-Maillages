@@ -2,7 +2,9 @@
 
 MeshViewerWidget::MeshViewerWidget(QWidget*_parent) : QGLWidget(_parent)
 {
-    init = false;
+    triToDraw = 0;
+    linesToDraw = 0;
+    pointsToDraw = 0;
 
     setMouseTracking(true);
     setFocus();
@@ -10,8 +12,6 @@ MeshViewerWidget::MeshViewerWidget(QWidget*_parent) : QGLWidget(_parent)
 
 MeshViewerWidget::MeshViewerWidget( QGLFormat& _fmt, QWidget* _parent ) : QGLWidget( _fmt, _parent )
 {
-    init = false;
-
     setMouseTracking(true);
     setFocus();
 }
@@ -27,6 +27,8 @@ void MeshViewerWidget::initializeGL()
     glLoadIdentity();
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix_);
     set_scene_pos(Vec3f(0.0, 0.0, 0.0), 1.0);
+
+    glEnable( GL_MULTISAMPLE );
 }
 
 void MeshViewerWidget::translate( const OpenMesh::Vec3f& _trans )
@@ -61,29 +63,100 @@ void MeshViewerWidget::loadMesh(GLfloat* verts, GLfloat* colors, int nVerts, GLu
     for(int i = 0; i < nVerts; i = i + 3)
     {
         int j = 2 * i;
-        vertsColsArray[j] = colors[i];
-        vertsColsArray[j+1] = colors[i+1];
-        vertsColsArray[j+2] = colors[i+2];
+        vertsColsArray[j] = colors[i] / 255.0;
+        vertsColsArray[j+1] = colors[i+1] / 255.0;
+        vertsColsArray[j+2] = colors[i+2] / 255.0;
 
         vertsColsArray[j+3] = verts[i];
         vertsColsArray[j+4] = verts[i+1];
         vertsColsArray[j+5] = verts[i+2];
     }
 
-    glGenBuffers( 2, DataBuffers );
+    glGenBuffers( 2, TriDataBuffers );
 
-    glBindBuffer(GL_ARRAY_BUFFER, DataBuffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, nVerts*2 * sizeof(GLfloat), vertsColsArray, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, TriDataBuffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, nVerts * 2 * sizeof(GLfloat), vertsColsArray, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, DataBuffers[1]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, TriDataBuffers[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, nTriangles * sizeof(GLuint), triangles, GL_STATIC_DRAW);
 
     triToDraw = nTriangles;
 
     init = true;
 
+    delete[] vertsColsArray;
+
     updateGL();
 }
+
+void MeshViewerWidget::loadLines(GLfloat* verts, GLfloat* colors, int nVerts, GLuint* lines, int nLines, QList<QPair<float, int> > es)
+{
+    GLfloat* linesColsArray = new GLfloat[nVerts * 2];
+
+    for(int i = 0; i < nVerts; i = i + 3)
+    {
+        int j = 2 * i;
+        linesColsArray[j] = colors[i] / 255.0;
+        linesColsArray[j+1] = colors[i+1] / 255.0;
+        linesColsArray[j+2] = colors[i+2] / 255.0;
+
+        linesColsArray[j+3] = verts[i];
+        linesColsArray[j+4] = verts[i+1];
+        linesColsArray[j+5] = verts[i+2];
+    }
+
+    glGenBuffers( 2, LinesDataBuffers );
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, LinesDataBuffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, nVerts * 2 * sizeof(GLfloat), linesColsArray, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, LinesDataBuffers[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, nLines * sizeof(GLuint), lines, GL_STATIC_DRAW);
+
+    linesToDraw = nLines;
+
+    edgeSizes = es;
+
+    delete[] linesColsArray;
+
+    updateGL();
+}
+
+void MeshViewerWidget::loadPoints(GLfloat* verts, GLfloat* colors, int nVerts, GLuint* points, int nPoints, QList<QPair<float, int> > vs)
+{
+    GLfloat* pointsColsArray = new GLfloat[nVerts * 2];
+
+    for(int i = 0; i < nVerts; i = i + 3)
+    {
+        int j = 2 * i;
+        pointsColsArray[j] = colors[i] / 255.0;
+        pointsColsArray[j+1] = colors[i+1] / 255.0;
+        pointsColsArray[j+2] = colors[i+2] / 255.0;
+
+        pointsColsArray[j+3] = verts[i];
+        pointsColsArray[j+4] = verts[i+1];
+        pointsColsArray[j+5] = verts[i+2];
+    }
+
+    glGenBuffers( 2, PointsDataBuffers );
+
+
+    glBindBuffer(GL_ARRAY_BUFFER, PointsDataBuffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, nVerts * 2 * sizeof(GLfloat), pointsColsArray, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, PointsDataBuffers[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, nPoints * sizeof(GLuint), points, GL_STATIC_DRAW);
+
+    pointsToDraw = nPoints;
+
+    vertsSizes = vs;
+
+    delete[] pointsColsArray;
+
+    updateGL();
+}
+
 
 void MeshViewerWidget::paintGL()
 {
@@ -93,25 +166,88 @@ void MeshViewerWidget::paintGL()
     glMatrixMode( GL_MODELVIEW );
     glLoadMatrixd( modelview_matrix_ );
 
-    if(init)
+    if(triToDraw != 0)
     {
-        // Utilisation des données des buffers
-        glBindBuffer(GL_ARRAY_BUFFER, DataBuffers[0]);
-        glVertexPointer( 3, GL_FLOAT, 6 * sizeof(float), ((float*)NULL + (3)) );
-        glColorPointer( 3, GL_FLOAT, 6 * sizeof(float), 0 );
+        glPolygonOffset(1.0, 2);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, DataBuffers[1]);
+        // on charge le buffer 0 : une liste de vertex [r, g, b, x, y, z] (6 float)
+        glBindBuffer(GL_ARRAY_BUFFER, TriDataBuffers[0]);
+
+        // on charge la partie [r, g, b]
+        glColorPointer( 3, GL_FLOAT, 6 * sizeof(float), 0 );
+        // on charge la partie [x, y, z]
+        glVertexPointer( 3, GL_FLOAT, 6 * sizeof(float), ((float*)NULL + (3)) );
+
+
+        // on charge le buffer 1 : une liste d'ID [v0, v1, v2] (3 int)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, TriDataBuffers[1]);
 
         glEnableClientState( GL_VERTEX_ARRAY );
 
-        glColor3f(1.0, 0.5, 0);
-        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        glDrawElements(GL_TRIANGLES, triToDraw, GL_UNSIGNED_INT, 0);
+        // affiche les faces en GL_COLOR_ARRAY
+        glEnableClientState( GL_COLOR_ARRAY );
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glDrawElements(GL_TRIANGLES, triToDraw, GL_UNSIGNED_INT, 0);
+        glDisable(GL_POLYGON_OFFSET_FILL);
+
+        glDisableClientState( GL_COLOR_ARRAY );
+        glDisableClientState( GL_VERTEX_ARRAY );
+    }
+
+
+    if(linesToDraw != 0)
+    {
+        // on charge le buffer 0 : une liste de vertex [r, g, b, x, y, z] (6 float)
+        glBindBuffer(GL_ARRAY_BUFFER, LinesDataBuffers[0]);
+
+        // on charge la partie [r, g, b]
+        glColorPointer( 3, GL_FLOAT, 6 * sizeof(float), 0 );
+        // on charge la partie [x, y, z]
+        glVertexPointer( 3, GL_FLOAT, 6 * sizeof(float), ((float*)NULL + (3)) );
+
+        // on charge le buffer 1 : une liste d'ID [v0, v1] (2 int)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, LinesDataBuffers[1]);
+
+        glEnableClientState( GL_VERTEX_ARRAY );
         glEnableClientState( GL_COLOR_ARRAY );
 
-        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-        glDrawElements(GL_TRIANGLES, triToDraw, GL_UNSIGNED_INT, 0);
+        int cur = 0;
+        for(int i = 0; i < edgeSizes.count(); i++)
+        {
+            glLineWidth(edgeSizes.at(i).first);
+            glDrawElements(GL_LINES, edgeSizes.at(i).second*2, GL_UNSIGNED_INT, (GLvoid*)(sizeof(GLfloat) * cur));
+            cur = cur + edgeSizes.at(i).second*2;
+        }
+
+        glDisableClientState( GL_COLOR_ARRAY );
+        glDisableClientState( GL_VERTEX_ARRAY );
+    }
+
+    if(pointsToDraw != 0)
+    {
+        // on charge le buffer 0 : une liste de vertex [r, g, b, x, y, z] (6 float)
+        glBindBuffer(GL_ARRAY_BUFFER, PointsDataBuffers[0]);
+
+        // on charge la partie [r, g, b]
+        glColorPointer( 3, GL_FLOAT, 6 * sizeof(float), 0 );
+        // on charge la partie [x, y, z]
+        glVertexPointer( 3, GL_FLOAT, 6 * sizeof(float), ((float*)NULL + (3)) );
+
+        // on charge le buffer 1 : une liste d'ID [v0] (1 int)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, PointsDataBuffers[1]);
+
+        glEnableClientState( GL_VERTEX_ARRAY );
+        glEnableClientState( GL_COLOR_ARRAY );
+
+        int cur = 0;
+        for(int i = 0; i < vertsSizes.count(); i++)
+        {
+            glPointSize(vertsSizes.at(i).first);
+            glDrawElements(GL_POINTS, vertsSizes.at(i).second, GL_UNSIGNED_INT, (GLvoid*)(sizeof(GLfloat) * cur));
+            cur = cur + vertsSizes.at(i).second;
+        }
 
         glDisableClientState( GL_COLOR_ARRAY );
         glDisableClientState( GL_VERTEX_ARRAY );

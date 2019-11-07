@@ -24,7 +24,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-LIBS += -lglut -lGLU
+unix:!macx {
+    LIBS += -lglut -lGLU
+    LIBS += -L$$PWD/../OpenMesh/liblinux/ -lOpenMeshCore
+
+    INCLUDEPATH += $$PWD/../OpenMesh/inc/
+    DEPENDPATH += $$PWD/../OpenMesh/inc/
+    DEPENDPATH += $$PWD/../OpenMesh/liblinux/
+}
+
+macx: {
+    INCLUDEPATH += $$PWD/../OpenMesh/inc/
+    LIBS += -L$$PWD/../OpenMesh/libosx/ -lOpenMeshCore -lOpenMeshTools
+}
 
 SOURCES += \
         main.cpp \
@@ -38,8 +50,4 @@ HEADERS += \
 FORMS += \
         mainwindow.ui
 
-LIBS += -L$$PWD/../OpenMesh/lib/ -lOpenMeshCore
 
-INCLUDEPATH += $$PWD/../OpenMesh/inc/
-DEPENDPATH += $$PWD/../OpenMesh/inc/
-DEPENDPATH += $$PWD/../OpenMesh/lib/

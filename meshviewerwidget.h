@@ -6,11 +6,19 @@
 #include <QGLWidget>
 #include "QMouseEvent"
 #include <OpenMesh/Core/Geometry/VectorT.hh>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
-#include <GL/glut.h>
+
+#ifdef __APPLE__
+    #include <gl.h>
+    #include <glu.h>
+    #include <glext.h>
+#else
+    #include <GL/gl.h>
+    #include <GL/glu.h>
+    #include <GL/glx.h>
+    #include <GL/glext.h>
+    #include <GL/glut.h>
+#endif
+
 
 
 using namespace OpenMesh;
@@ -39,11 +47,22 @@ public:
 
     void reloadPOV();
     void loadMesh(GLfloat* verts, GLfloat* colors, int nVerts, GLuint* triangles, int nTriangles);
+    void loadLines(GLfloat* verts, GLfloat* colors, int nVerts, GLuint* lines, int nLines, QList<QPair<float, int> > es);
+    void loadPoints(GLfloat* verts, GLfloat* colors, int nVerts, GLuint* points, int nPoints, QList<QPair<float, int> > vs);
 
     // buffer pour les VBO
-    GLuint DataBuffers[2];
+    GLuint TriDataBuffers[2];
     // Nombre de triangles du mesh (pour le call du draw)
     int triToDraw;
+
+    GLuint LinesDataBuffers[2];
+    int linesToDraw;
+    QList<QPair<float, int> > edgeSizes;
+
+    GLuint PointsDataBuffers[2];
+    int pointsToDraw;
+    QList<QPair<float, int> > vertsSizes;
+
     // pour savoir si les buffer sont init
     bool init;
 
