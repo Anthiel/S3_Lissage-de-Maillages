@@ -51,6 +51,9 @@ public:
     OpenMesh::Vec3f LaplaceBeltrami(MyMesh* _mesh, int vertexID);
     void colorVertex(MyMesh *_mesh, int vertexID, MyMesh::Color c);
     int VertexLaplace = 0;
+    double valueH = 0.5;
+    double valueLambda = 0.25;
+
 
 private slots:
     void on_pushButton_chargement_clicked();
@@ -60,6 +63,10 @@ private slots:
     void on_vertexSelec_valueChanged(const QString &arg1);
 
     void on_laplace_clicked();
+
+    void on_spinH_valueChanged(const QString &arg1);
+
+    void on_spinLambda_valueChanged(const QString &arg1);
 
 private:
 

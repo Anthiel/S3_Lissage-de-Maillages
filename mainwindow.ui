@@ -79,7 +79,32 @@
         </spacer>
        </item>
        <item>
-        <widget class="QSpinBox" name="vertexSelec"/>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>lambda</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="spinLambda">
+         <property name="value">
+          <double>0.250000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>h</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="spinH">
+         <property name="value">
+          <double>0.500000000000000</double>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="laplace">
