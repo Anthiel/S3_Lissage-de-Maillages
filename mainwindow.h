@@ -6,6 +6,7 @@
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 #include <QVector3D>
+#include <iostream>
 
 namespace Ui {
 class MainWindow;
@@ -47,7 +48,7 @@ public:
     float AireBarycentrique(MyMesh* _mesh, int vertexID);
 
     float faceArea(MyMesh* _mesh, int faceID);
-    QVector3D LaplaceBeltrami(MyMesh* _mesh, int vertexID);
+    OpenMesh::Vec3f LaplaceBeltrami(MyMesh* _mesh, int vertexID);
     void colorVertex(MyMesh *_mesh, int vertexID, MyMesh::Color c);
     int VertexLaplace = 0;
 
