@@ -45,6 +45,12 @@ public:
 
 
     double contangente(double angle);
+    double contagenteDeuxPoints(MyMesh *_mesh, int vertexID, int vertex2ID);
+    double sommeContangenteN1(MyMesh *_mesh, int vertexID);
+    bool pointIsInN1(MyMesh *_mesh, int vertexID, int vertex2ID);
+    void remplirMatrice(MyMesh *_mesh, std::vector <std::vector <double>> &matrice);
+
+
     float AireBarycentrique(MyMesh* _mesh, int vertexID);
 
     float faceArea(MyMesh* _mesh, int faceID);
@@ -67,6 +73,8 @@ private slots:
     void on_spinH_valueChanged(const QString &arg1);
 
     void on_spinLambda_valueChanged(const QString &arg1);
+
+    void on_fillMatrixQuestion2_clicked();
 
 private:
 

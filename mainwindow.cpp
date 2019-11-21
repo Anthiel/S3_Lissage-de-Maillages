@@ -1,7 +1,46 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+// Calcul de l'aire d'une face du maillage
+float MainWindow::faceArea(MyMesh* _mesh, int faceID)
+{
+    FaceHandle fh = _mesh->face_handle ( faceID );
 
+    std::vector<VertexHandle> vertexes;
+
+    // On récupère les 3 sommets de la face
+    MyMesh::FaceVertexIter fh_v = _mesh->fv_iter(fh);
+    for(; fh_v.is_valid(); ++fh_v)
+        vertexes.push_back ( *fh_v );
+
+    // On créé deux vecteurs avec le même point de départ
+    OpenMesh::Vec3f vectorAB = _mesh->point(vertexes[1]) - _mesh->point(vertexes[0]);
+    OpenMesh::Vec3f vectorAC = _mesh->point(vertexes[2]) - _mesh->point(vertexes[0]);
+
+    // On calcule le produit vectoriel de ses deux vecteurs et retourne sa norme divisée par 2
+    OpenMesh::Vec3f product = vectorAB % vectorAC;
+    float norm = product.norm();
+
+    return norm / 2.0f;
+}
+
+// Calcule de l'aire barycentrique sous un sommet
+float MainWindow::AireBarycentrique(MyMesh* _mesh, int vertID){
+    float baryArea = 0;
+
+    VertexHandle vh = _mesh->vertex_handle ( vertID );
+
+    // On somme toutes les aires des faces voisines au sommet
+    MyMesh::VertexFaceIter vf = _mesh->vf_iter ( vh );
+    for ( ; vf.is_valid ( ) ; ++vf ) {
+        FaceHandle current = *vf;
+        baryArea += faceArea ( _mesh , current.idx( ) );
+    }
+    // On retourne cette somme divisée par 3
+    return baryArea / 3.0f;
+}
+
+/*
 
 float MainWindow::AireBarycentrique(MyMesh* _mesh, int vertexID){
     float aireTotal;
@@ -44,7 +83,7 @@ float MainWindow::faceArea(MyMesh* _mesh, int faceID)
 
     return res.norm()/2.0;
 }
-
+*/
 
 OpenMesh::Vec3f MainWindow::LaplaceBeltrami(MyMesh* _mesh, int vertexID){
 
@@ -106,6 +145,98 @@ double MainWindow::contangente(double angle){
     return cos(angle)/sin(angle);
 }
 
+double MainWindow::contagenteDeuxPoints(MyMesh *_mesh, int vertexID, int vertex2ID){
+
+    VertexHandle currentVertex = _mesh->vertex_handle(vertexID);
+    VertexHandle secondVertex = _mesh->vertex_handle(vertex2ID);
+
+    std::vector<int> AngleID;
+
+    //on cherche les deux faces des deux vertexs
+    for (MyMesh::VertexFaceIter curVert = _mesh->vf_iter(currentVertex); curVert.is_valid(); ++curVert)
+    {
+        for (MyMesh::VertexFaceIter curVert1 = _mesh->vf_iter(secondVertex); curVert1.is_valid(); ++curVert1)
+        {
+            if((*curVert).idx() == (*curVert1).idx()){
+                //cette face a les deux vertexs
+
+                FaceHandle face = *curVert;
+                for(MyMesh::FaceVertexIter fh = _mesh->fv_iter(curVert); fh.is_valid(); ++fh){
+                    //on parcours les vertexs de cette face pour trouver le vertex manquant
+                    VertexHandle normalVertex = *fh;
+                    if(normalVertex.idx() != secondVertex.idx() && normalVertex.idx() != currentVertex.idx()){
+                        AngleID.push_back(normalVertex.idx());
+                    }
+                }
+             }
+         }
+     }
+
+     OpenMesh::Vec3f pointV = _mesh->point(_mesh->vertex_handle(vertexID));
+     OpenMesh::Vec3f pointVi = _mesh->point(_mesh->vertex_handle(secondVertex.idx()));
+
+     OpenMesh::Vec3f pointCentral = _mesh->point(_mesh->vertex_handle(AngleID.at(0)));
+     OpenMesh::Vec3f vecteurCentralA = pointV - pointCentral;
+     OpenMesh::Vec3f vecteurCentralB = pointVi - pointCentral;
+
+     double angleAlphaI = acos(vecteurCentralA | vecteurCentralB);
+
+     OpenMesh::Vec3f pointCentral1 = _mesh->point(_mesh->vertex_handle(AngleID.at(1)));
+     OpenMesh::Vec3f vecteurCentralA1 = pointV - pointCentral;
+     OpenMesh::Vec3f vecteurCentralB1 = pointVi - pointCentral;
+
+     double angleBetaI = acos(vecteurCentralA1 | vecteurCentralB1);
+
+     return contangente(angleAlphaI) + contangente(angleBetaI);
+}
+
+double MainWindow::sommeContangenteN1(MyMesh *_mesh, int vertexID){
+
+    double sum = 0.0;
+    VertexHandle currentVertex = _mesh->vertex_handle(vertexID);
+
+    for(MyMesh::VertexVertexIter  vv_it = _mesh->vv_iter(currentVertex); vv_it; ++vv_it) {
+        VertexHandle secondVertex = *vv_it;
+        sum += contagenteDeuxPoints(_mesh, currentVertex.idx(), secondVertex.idx());
+    }
+    return -sum;
+}
+
+bool MainWindow::pointIsInN1(MyMesh *_mesh, int vertexID, int vertex2ID){
+
+    VertexHandle currentVertex = _mesh->vertex_handle(vertexID);
+
+    for(MyMesh::VertexVertexIter  vv_it = _mesh->vv_iter(currentVertex); vv_it; ++vv_it) {
+        VertexHandle secondVertex = *vv_it;
+
+        if(secondVertex.idx() == vertex2ID)
+            return true;
+    }
+    return false;
+}
+
+void MainWindow::remplirMatrice(MyMesh *_mesh, std::vector <std::vector <double>> &matrice){
+
+    for ( MyMesh::VertexIter curVert = _mesh->vertices_begin() ; curVert!=_mesh->vertices_end() ; ++curVert ) {
+
+        VertexHandle point1 = *curVert;
+
+        for ( MyMesh::VertexIter curVert1 = _mesh->vertices_begin() ; curVert1!=_mesh->vertices_end() ; ++curVert1 ) {
+
+            VertexHandle point2 = *curVert1;
+
+            if(point1.idx() == point2.idx())
+                matrice[point1.idx()][point2.idx()] = sommeContangenteN1(_mesh, point1.idx());
+
+            else if(pointIsInN1(_mesh, point1.idx(), point2.idx()))
+                matrice[point1.idx()][point2.idx()] = contagenteDeuxPoints(_mesh, point1.idx(), point2.idx());
+
+            else
+                matrice[point1.idx()][point2.idx()] = 0.0;
+        }
+    }
+}
+
 void MainWindow::colorVertex(MyMesh *_mesh, int vertexID, MyMesh::Color c){
     //resetAllColorsAndThickness(_mesh);
 
@@ -130,6 +261,7 @@ void MainWindow::on_laplace_clicked()
         VertexHandle current = *curVert;
         newPosPoint.push_back(mesh.point(current) + valueLambda * valueH * LaplaceBeltrami(&mesh, current.idx()));
     }
+
     for ( MyMesh::VertexIter curVert = mesh.vertices_begin() ; curVert!=mesh.vertices_end() ; ++curVert ) {
         VertexHandle current = *curVert;
         mesh.set_point(current, newPosPoint[current.idx()]);
@@ -137,7 +269,14 @@ void MainWindow::on_laplace_clicked()
     displayMesh(&mesh);
 }
 
-
+void MainWindow::on_fillMatrixQuestion2_clicked()
+{
+    std::vector <std::vector <double>> matrice (mesh.n_vertices(), std::vector<double> (mesh.n_vertices()));
+    remplirMatrice(&mesh, matrice);
+    for(int i = 0; i< 20; i++)
+        for(int j = 0; j< 20; j++)
+            std::cout << "matrice : " << matrice[i][j] << std::endl;
+}
 
 
 
@@ -474,3 +613,4 @@ void MainWindow::on_spinLambda_valueChanged(const QString &arg1)
 {
     valueLambda = ui->spinLambda->value();
 }
+

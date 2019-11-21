@@ -66,6 +66,9 @@
         </widget>
        </item>
        <item>
+        <widget class="QSpinBox" name="vertexSelec"/>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -110,6 +113,13 @@
         <widget class="QPushButton" name="laplace">
          <property name="text">
           <string>laplace</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="fillMatrixQuestion2">
+         <property name="text">
+          <string>remplir matrice (question 2)</string>
          </property>
         </widget>
        </item>
